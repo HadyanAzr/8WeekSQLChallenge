@@ -1,0 +1,485 @@
+https://8weeksqlchallenge.com/case-study-1/
+/* --------------------
+   Case Study Questions
+   --------------------*/
+
+**Schema (PostgreSQL v13)**
+
+    CREATE SCHEMA dannys_diner;
+    SET search_path = dannys_diner;
+    
+    CREATE TABLE sales (
+      "customer_id" VARCHAR(1),
+      "order_date" DATE,
+      "product_id" INTEGER
+    );
+    
+    INSERT INTO sales
+      ("customer_id", "order_date", "product_id")
+    VALUES
+      ('A', '2021-01-01', '1'),
+      ('A', '2021-01-01', '2'),
+      ('A', '2021-01-07', '2'),
+      ('A', '2021-01-10', '3'),
+      ('A', '2021-01-11', '3'),
+      ('A', '2021-01-11', '3'),
+      ('B', '2021-01-01', '2'),
+      ('B', '2021-01-02', '2'),
+      ('B', '2021-01-04', '1'),
+      ('B', '2021-01-11', '1'),
+      ('B', '2021-01-16', '3'),
+      ('B', '2021-02-01', '3'),
+      ('C', '2021-01-01', '3'),
+      ('C', '2021-01-01', '3'),
+      ('C', '2021-01-07', '3');
+     
+    
+    CREATE TABLE menu (
+      "product_id" INTEGER,
+      "product_name" VARCHAR(5),
+      "price" INTEGER
+    );
+    
+    INSERT INTO menu
+      ("product_id", "product_name", "price")
+    VALUES
+      ('1', 'sushi', '10'),
+      ('2', 'curry', '15'),
+      ('3', 'ramen', '12');
+      
+    
+    CREATE TABLE members (
+      "customer_id" VARCHAR(1),
+      "join_date" DATE
+    );
+    
+    INSERT INTO members
+      ("customer_id", "join_date")
+    VALUES
+      ('A', '2021-01-07'),
+      ('B', '2021-01-09');
+
+---
+
+
+-- 1. What is the total amount each customer spent at the restaurant?
+-- 2. How many days has each customer visited the restaurant?
+-- 3. What was the first item from the menu purchased by each customer?
+-- 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
+-- 5. Which item was the most popular for each customer?
+-- 6. Which item was purchased first by the customer after they became a member?
+-- 7. Which item was purchased just before the customer became a member?
+-- 8. What is the total items and amount spent for each member before they became a member?
+-- 9.  If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+-- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - how many points do customer A and B have at the end of January?
+-- 11. Join All The Things The following questions are related creating basic data tables that Danny and his team can use to quickly derive insights without needing to join the underlying tables using SQL.
+-- 12. Rank The join table at task number 11
+-- Example Query:
+
+SELECT
+  	product_id,
+    product_name,
+    price
+FROM dannys_diner.menu
+ORDER BY price DESC
+LIMIT 5;
+
+--  What is the total amount each customer spent at the restaurant?
+
+with cnt AS(
+    SELECT 
+    	customer_id,
+        product_id,
+        COUNT(product_id) as cnt_p
+    from dannys_diner.sales s
+    group by
+    	customer_id,
+        product_id)
+        
+    select
+    	cnt.customer_id,
+        sum(cnt_p * m.price) as Total_spent
+    from cnt
+    join
+    	dannys_diner.menu m on cnt.product_id = m.product_id
+    group by
+    	cnt.customer_id
+    order by
+    	cnt.customer_id
+    ;
+
+| customer_id | total_spent |
+| ----------- | ----------- |
+| A           | 76          |
+| B           | 74          |
+| C           | 36          |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/2512)
+-- SIMPLE SOLUTION
+
+SELECT customer_id, SUM(price) AS Total_amount_spent FROM dannys_diner.sales
+JOIN dannys_diner.menu
+ON sales.product_id = menu.product_id
+GROUP BY customer_id;
+
+-- 2. How many days has each customer visited the restaurant?
+
+Select 
+    	customer_id,
+        count(distinct order_date) as visit
+    from dannys_diner.sales
+    group by
+    	customer_id
+    order by
+    	customer_id
+    ;
+
+| customer_id | visit |
+| ----------- | ----- |
+| A           | 4     |
+| B           | 6     |
+| C           | 2     |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/2512)
+
+-- 3. What was the first item from the menu purchased by each customer?
+Select
+    	s.customer_id,
+        m.product_name
+    from dannys_diner.sales s 
+    join dannys_diner.menu m ON s.product_id = m.product_id
+    group by
+    	s.customer_id,
+        m.product_name,
+        s.order_date
+    having
+    	s.order_date = (select
+                        min(distinct order_date) as first_order
+                        from dannys_diner.sales ss
+                        join dannys_diner.menu mm on ss.product_id = mm.product_id)
+    order by
+    	s.customer_id
+    ;
+
+| customer_id | product_name |
+| ----------- | ------------ |
+| A           | curry        |
+| A           | sushi        |
+| B           | curry        |
+| C           | ramen        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/2512)
+
+-- 4. What is the most purchased item on the menu and how many times was it purchased by all customers?
+
+select 
+    	product_name,
+        count(order_date) as most_purch
+    from 
+    	dannys_diner.menu m
+    join 
+    	dannys_diner.sales s ON m.product_id = s.product_id
+    group by
+    	product_name
+    order by
+    	most_purch desc
+    limit 1
+    ;
+
+| product_name | most_purch |
+| ------------ | ---------- |
+| ramen        | 8          |
+
+
+-- 5. Which item was the most popular for each customer?
+
+WITH most_popular_item_cte AS
+    (SELECT 
+	s.customer_id, 
+	m.product_name, 
+      COUNT(m.product_id) AS times_purchased,
+      DENSE_RANK() OVER(PARTITION BY s.customer_id
+      ORDER BY COUNT(s.customer_id) DESC) AS rank
+    FROM DANNYS_DINER.menu AS m
+    JOIN DANNYS_DINER.sales AS s
+     ON m.product_id = s.product_id
+    GROUP BY s.customer_id, m.product_id, product_name)SELECT * FROM most_popular_item_cte
+    WHERE rank = 1
+    ;
+
+| customer_id | product_name | times_purchased | rank |
+| ----------- | ------------ | --------------- | ---- |
+| A           | ramen        | 3               | 1    |
+| B           | ramen        | 2               | 1    |
+| B           | sushi        | 2               | 1    |
+| B           | curry        | 2               | 1    |
+| C           | ramen        | 3               | 1    |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+-- 6. Which item was purchased first by the customer after they became a member?
+
+WITH FO AS(
+    SELECT
+    	S.CUSTOMER_ID,
+      ME.JOIN_DATE,
+      S.ORDER_DATE,
+      M.PRODUCT_ID,
+      M.PRODUCT_NAME,
+      DENSE_RANK() OVER(PARTITION BY S.CUSTOMER_ID ORDER BY S.ORDER_DATE) AS RANKING
+    FROM
+    	DANNYS_DINER.SALES S
+    JOIN
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    JOIN
+    	DANNYS_DINER.MEMBERS ME ON S.CUSTOMER_ID = ME.CUSTOMER_ID
+    WHERE
+    	S.ORDER_DATE >= ME.JOIN_DATE
+        )
+        
+    SELECT
+    	CUSTOMER_ID,
+        ORDER_DATE,
+        PRODUCT_ID,
+        PRODUCT_NAME
+    FROM
+    	FO
+    WHERE
+    	RANKING = 1
+    ;
+
+| customer_id | order_date               | product_id | product_name |
+| ----------- | ------------------------ | ---------- | ------------ |
+| A           | 2021-01-07T00:00:00.000Z | 2          | curry        |
+| B           | 2021-01-11T00:00:00.000Z | 1          | sushi        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+-- 7. Which item was purchased just before the customer became a member?
+
+SELECT
+    	S.CUSTOMER_ID,
+      ME.JOIN_DATE,
+      S.ORDER_DATE,
+      M.PRODUCT_ID,
+      M.PRODUCT_NAME,
+      DENSE_RANK() OVER(PARTITION BY S.CUSTOMER_ID ORDER BY S.ORDER_DATE) AS RANKING
+    FROM
+    	DANNYS_DINER.SALES S
+    JOIN
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    JOIN
+    	DANNYS_DINER.MEMBERS ME ON S.CUSTOMER_ID = ME.CUSTOMER_ID
+    WHERE
+    	S.ORDER_DATE < ME.JOIN_DATE
+    ORDER BY
+    	S.ORDER_DATE
+    ;
+
+| customer_id | join_date                | order_date               | product_id | product_name | ranking |
+| ----------- | ------------------------ | ------------------------ | ---------- | ------------ | ------- |
+| A           | 2021-01-07T00:00:00.000Z | 2021-01-01T00:00:00.000Z | 1          | sushi        | 1       |
+| A           | 2021-01-07T00:00:00.000Z | 2021-01-01T00:00:00.000Z | 2          | curry        | 1       |
+| B           | 2021-01-09T00:00:00.000Z | 2021-01-01T00:00:00.000Z | 2          | curry        | 1       |
+| B           | 2021-01-09T00:00:00.000Z | 2021-01-02T00:00:00.000Z | 2          | curry        | 2       |
+| B           | 2021-01-09T00:00:00.000Z | 2021-01-04T00:00:00.000Z | 1          | sushi        | 3       |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+-- 8. What is the total items and amount spent for each member before they became a member? 
+ 
+ SELECT
+     	S.CUSTOMER_ID,
+        COUNT(S.PRODUCT_ID) AS TOT_ITEM,
+        SUM(MN.PRICE) AS TOT_SPENT
+     FROM
+     	DANNYS_DINER.SALES S
+     JOIN
+     	DANNYS_DINER.MENU MN ON S.PRODUCT_ID = MN.PRODUCT_ID
+     JOIN 
+     	DANNYS_DINER.MEMBERS ME ON S.CUSTOMER_ID = ME.CUSTOMER_ID
+     WHERE
+     	S.ORDER_DATE < ME.JOIN_DATE
+     GROUP BY
+     	S.CUSTOMER_ID
+    ;
+
+| customer_id | tot_item | tot_spent |
+| ----------- | -------- | --------- |
+| A           | 2        | 25        |
+| B           | 2        | 40        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+-- 9.  If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?
+
+SELECT
+    	S.CUSTOMER_ID,
+        SUM(CASE
+            WHEN M.PRODUCT_ID = 1 THEN 20 * M.PRICE
+            ELSE 10 * M.PRICE
+            END) AS CUST_POINT
+    FROM
+    	DANNYS_DINER.SALES S 
+    JOIN 
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    GROUP BY
+    	S.CUSTOMER_ID
+    ORDER BY
+    	CUSTOMER_ID 
+    ;
+
+| customer_id | cust_point |
+| ----------- | ---------- |
+| A           | 860        |
+| B           | 940        |
+| C           | 360        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+-- 10. In the first week after a customer joins the program (including their join date) they earn 2x points on all items, not just sushi - 
+how many points do customer A and B have at the end of January?
+
+SELECT
+    	S.CUSTOMER_ID,
+        SUM(CASE
+            WHEN S.ORDER_DATE BETWEEN MM.JOIN_DATE AND '2021-01-13' and S.CUSTOMER_ID = 'A' THEN 20 * M.PRICE
+            WHEN S.ORDER_DATE BETWEEN MM.JOIN_DATE AND '2021-01-15' and S.CUSTOMER_ID = 'B' THEN 20 * M.PRICE
+            ELSE 10 * M.PRICE
+            END) AS TOT_POINTS
+    FROM
+    	DANNYS_DINER.SALES S 
+    JOIN 
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    JOIN
+    	DANNYS_DINER.MEMBERS MM ON S.CUSTOMER_ID = MM.CUSTOMER_ID
+    WHERE
+    	S.CUSTOMER_ID = 'A' OR S.CUSTOMER_ID = 'B'
+        AND
+        S.ORDER_DATE BETWEEN MM.JOIN_DATE AND '2021-01-31'
+    GROUP BY
+    	S.CUSTOMER_ID
+    ORDER BY
+    	CUSTOMER_ID 
+    ;
+
+| customer_id | tot_points |
+| ----------- | ---------- |
+| A           | 1270       |
+| B           | 320        |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+--Join All The Things
+The following questions are related creating basic data tables that Danny and his team can use to quickly derive insights without needing to join the underlying tables using SQL.
+
+SELECT
+    	S.CUSTOMER_ID,
+        S.ORDER_DATE,
+        M.PRODUCT_NAME,
+        M.PRICE,
+        (CASE
+         WHEN S.ORDER_DATE >= MM.JOIN_DATE THEN 'Y'
+         ELSE 'N'
+         END) AS MEMBER
+    FROM
+    	DANNYS_DINER.SALES S
+    JOIN
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    JOIN
+    	DANNYS_DINER.MEMBERS MM ON S.CUSTOMER_ID = MM.CUSTOMER_ID
+    ORDER BY
+    	S.CUSTOMER_ID,
+        S.ORDER_DATE
+    ;
+
+| customer_id | order_date               | product_name | price | member |
+| ----------- | ------------------------ | ------------ | ----- | ------ |
+| A           | 2021-01-01T00:00:00.000Z | sushi        | 10    | N      |
+| A           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |
+| A           | 2021-01-07T00:00:00.000Z | curry        | 15    | Y      |
+| A           | 2021-01-10T00:00:00.000Z | ramen        | 12    | Y      |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      |
+| B           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |
+| B           | 2021-01-02T00:00:00.000Z | curry        | 15    | N      |
+| B           | 2021-01-04T00:00:00.000Z | sushi        | 10    | N      |
+| B           | 2021-01-11T00:00:00.000Z | sushi        | 10    | Y      |
+| B           | 2021-01-16T00:00:00.000Z | ramen        | 12    | Y      |
+| B           | 2021-02-01T00:00:00.000Z | ramen        | 12    | Y      |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
+
+--Rank All The Things
+
+--Danny also requires further information about the ranking of customer products,
+but he purposely does not need the ranking for non-member purchases so he expects null ranking values for 
+the records when customers are not yet part of the loyalty program.
+
+    WITH JOIN_TABLE AS(
+    SELECT
+    	S.CUSTOMER_ID,
+        S.ORDER_DATE,
+        M.PRODUCT_NAME,
+        M.PRICE,
+        (CASE
+         WHEN S.ORDER_DATE >= MM.JOIN_DATE THEN 'Y'
+         ELSE 'N'
+         END) AS MEMBER
+    FROM
+    	DANNYS_DINER.SALES S
+    JOIN
+    	DANNYS_DINER.MENU M ON S.PRODUCT_ID = M.PRODUCT_ID
+    JOIN
+    	DANNYS_DINER.MEMBERS MM ON S.CUSTOMER_ID = MM.CUSTOMER_ID
+    ORDER BY
+    	S.CUSTOMER_ID,
+        S.ORDER_DATE
+    )
+    
+    SELECT *,
+    	(CASE 
+         WHEN MEMBER = 'N' THEN NULL
+         ELSE DENSE_RANK() OVER(PARTITION BY CUSTOMER_ID,MEMBER ORDER BY ORDER_DATE) 
+         END) AS RANKING
+    FROM 
+    	JOIN_TABLE;
+
+| customer_id | order_date               | product_name | price | member | ranking |
+| ----------- | ------------------------ | ------------ | ----- | ------ | ------- |
+| A           | 2021-01-01T00:00:00.000Z | sushi        | 10    | N      |         |
+| A           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |         |
+| A           | 2021-01-07T00:00:00.000Z | curry        | 15    | Y      | 1       |
+| A           | 2021-01-10T00:00:00.000Z | ramen        | 12    | Y      | 2       |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+| A           | 2021-01-11T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+| B           | 2021-01-01T00:00:00.000Z | curry        | 15    | N      |         |
+| B           | 2021-01-02T00:00:00.000Z | curry        | 15    | N      |         |
+| B           | 2021-01-04T00:00:00.000Z | sushi        | 10    | N      |         |
+| B           | 2021-01-11T00:00:00.000Z | sushi        | 10    | Y      | 1       |
+| B           | 2021-01-16T00:00:00.000Z | ramen        | 12    | Y      | 2       |
+| B           | 2021-02-01T00:00:00.000Z | ramen        | 12    | Y      | 3       |
+
+---
+
+[View on DB Fiddle](https://www.db-fiddle.com/f/2rM8RAnq7h5LLDTzZiRWcd/138)
