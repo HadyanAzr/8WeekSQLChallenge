@@ -222,3 +222,59 @@ SELECT
     ORDER BY
     	CUSTOMER_ID 
     ;
+
+--Bonus Questions
+--Join All The Things
+
+--The following questions are related creating basic data tables that Danny and his team can use to quickly derive insights without needing to join the underlying tables using SQL.
+SELECT
+	s.CUSTOMER_ID,
+	s.ORDER_DATE,
+	me.PRODUCT_NAME,
+	me.PRICE,
+	CASE
+		WHEN s.ORDER_DATE >= mm.JOIN_DATE THEN 'Y'
+		ELSE 'N'
+		END AS member
+FROM
+	dannys_diner.sales s
+JOIN
+	dannys_diner.members mm on mm.customer_id = s.customer_id
+JOIN 
+	dannys_diner.menu me ON me.product_id = s.product_id
+ORDER BY
+	s.customer_id,
+	s.order_date
+
+--Rank All The Things
+
+--Danny also requires further information about the ranking of customer products,
+--but he purposely does not need the ranking for non-member purchases so he expects null ranking values for the records when customers are not yet part of the loyalty program.
+WITH CTE AS(
+SELECT
+	s.CUSTOMER_ID,
+	s.ORDER_DATE,
+	me.PRODUCT_NAME,
+	me.PRICE,
+	CASE
+		WHEN s.ORDER_DATE >= mm.JOIN_DATE THEN 'Y'
+		ELSE 'N'
+		END AS member
+FROM
+	dannys_diner.sales s
+JOIN
+	dannys_diner.members mm on mm.customer_id = s.customer_id
+JOIN 
+	dannys_diner.menu me ON me.product_id = s.product_id
+ORDER BY
+	s.customer_id,
+	s.order_date)
+SELECT
+	*,
+	CASE
+		WHEN member = 'N' THEN NULL
+		ELSE
+	DENSE_RANK() OVER(PARTITION BY customer_id, member ORDER BY order_date)
+	END AS RANKING
+FROM 
+	CTE
