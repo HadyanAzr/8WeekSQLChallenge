@@ -1,4 +1,4 @@
---  What is the total amount each customer spent at the restaurant?
+--  1. What is the total amount each customer spent at the restaurant?
 
 with cnt AS(
     SELECT 
@@ -125,13 +125,14 @@ WITH FO AS(
     	RANKING = 1
     ;
 -- 7. Which item was purchased just before the customer became a member?
-
+WITH cte AS(
 	SELECT
      S.CUSTOMER_ID,
       ME.JOIN_DATE,
       S.ORDER_DATE,
       M.PRODUCT_ID,
-      M.PRODUCT_NAME
+      M.PRODUCT_NAME,
+	  DENSE_RANK() OVER(PARTITION BY S.customer_id ORDER BY S.order_date DESC) AS ranking
     FROM
     	DANNYS_DINER.SALES S
     JOIN
@@ -141,7 +142,17 @@ WITH FO AS(
     WHERE
     	S.ORDER_DATE < ME.JOIN_DATE
     ORDER BY
-    	S.ORDER_DATE
+    	S.ORDER_DATE)
+	SELECT
+		customer_id,
+		join_date,
+		order_date,
+		product_id,
+		product_name
+	FROM
+		cte
+	WHERE
+		ranking = 1
     ;
 -- 8. What is the total items and amount spent for each member before they became a member? 
  
