@@ -21,7 +21,7 @@ SELECT
 FROM	
 	pizza_runner.runner_orders1
 WHERE
-	cancellation NOT LIKE '%CANCEL%'
+	distance IS NOT NULL
 GROUP BY
 	runner_id
 ORDER BY
@@ -41,7 +41,7 @@ JOIN
 JOIN
 	PIZZA_RUNNER.runner_orders1 RO ON CO.order_id = RO.order_id
 WHERE
-	RO.cancellation NOT LIKE '%CANCEL%'
+	RO.distance IS NOT NULL
 GROUP BY
 	PN.pizza_id, 
 	PN.pizza_name  
@@ -79,7 +79,7 @@ FROM
 	JOIN
 		PIZZA_RUNNER.customer_orders1 CO ON CO.order_id = RO.order_id
 	 WHERE
-	 RO.CANCELLATION NOT LIKE '%CANCEL%'
+	 RO.distance IS NOT NULL
 	GROUP BY
 		CO.ORDER_ID) AS ORDER_TABLE
 ;
@@ -93,7 +93,7 @@ SELECT
 	   ELSE 0
 	   END) AS CHG,
 	SUM(CASE
-	   	WHEN CO.EXCLUSIONS is not NULL OR CO.EXTRAS is not NULL THEN 1
+	   	WHEN CO.EXCLUSIONS is NULL AND CO.EXTRAS is NULL THEN 1
 	   	ELSE 0
 	   	END) AS NOCHG
 FROM	
@@ -101,11 +101,12 @@ FROM
 JOIN
 	pizza_runner.runner_orders1 RO ON RO.order_id = CO.order_id
 WHERE
-	RO.cancellation NOT LIKE '%CANCEL%'
+	RO.distance IS NOT NULL
 GROUP BY
 	CUSTOMER_ID
 ORDER by 
 	CUSTOMER_ID
+	;
 	
 -- 8.How many pizzas were delivered that had both exclusions and extras?
 
@@ -119,7 +120,7 @@ FROM
 JOIN
 	pizza_runner.RUNNER_ORDERS1 RO ON CO.ORDER_ID = RO.ORDER_ID
 WHERE
-	RO.cancellation NOT LIKE '%CANCEL%'
+	RO.distance IS NOT NULL
 ;
 	
 -- 9.What was the total volume of pizzas ordered for each hour of the day?
@@ -137,13 +138,15 @@ ORDER BY
 
 -- 10.What was the volume of orders for each day of the week?
 
-SELECT TO_CHAR(ORDER_TIME, 'Day') AS WEEKDAY,
+SELECT 
+	TO_CHAR(ORDER_TIME, 'Day') AS WEEKDAY,
     COUNT(ORDER_ID) AS PIZZA_ORDERED
-FROM PIZZA_RUNNER.customer_orders1
+FROM 
+	PIZZA_RUNNER.customer_orders1
 GROUP BY 
 	WEEKDAY
 ORDER BY 
-WEEKDAY
+	WEEKDAY
 ; 
 
 -- B. Runner and Customer Experience
@@ -287,7 +290,7 @@ GROUP BY runner_id; -- use sum and case to sum success delivery and divided with
 
 C. Ingredient Optimisation
 
--- What are the standard ingredients for each pizza?
+-- 1. What are the standard ingredients for each pizza?
 WITH CTE AS(
 SELECT
 	pizza_id, 
@@ -306,7 +309,7 @@ ORDER BY
 	PIZZA_ID, 
 	PT.topping_name
 ;
--- What was the most commonly added extra?
+-- 2.What was the most commonly added extra?
 
 SELECT
 	PT.topping_name,
@@ -322,7 +325,7 @@ ORDER BY
 	PT.topping_name
 ;
 
--- What was the most common exclusion?
+-- 3. What was the most common exclusion?
 
 SELECT
 	PT.topping_name,
@@ -337,11 +340,3 @@ GROUP BY
 ORDER BY
 	PT.topping_name
 ;
--- Generate an order item for each record in the customers_orders table in the format of one of the following:
-  -- Meat Lovers
-  -- Meat Lovers - Exclude Beef
-  -- Meat Lovers - Extra Bacon
-  -- Meat Lovers - Exclude Cheese, Bacon - Extra Mushroom, Peppers
--- Generate an alphabetically ordered comma separated ingredient list for each pizza order from the customer_orders table and add a 2x in front of any relevant ingredients
-  -- For example: "Meat Lovers: 2xBacon, Beef, ... , Salami"
--- What is the total quantity of each ingredient used in all delivered pizzas sorted by most frequent first?
