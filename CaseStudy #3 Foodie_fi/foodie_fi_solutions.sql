@@ -12,7 +12,7 @@ FROM
 JOIN
 	foodie_fi."plans" p on p.plan_id = s.plan_id
 WHERE
-	customer_id IN (1,2,3,4,5,6,7,8)
+	customer_id IN (1,2,11,13,15,16,18,19)
 ORDER BY
 	customer_id,
 	start_date	
@@ -42,14 +42,17 @@ ORDER BY
 -- 2. What is the monthly distribution of trial plan start_date values for our dataset 
 -- use the start of the month as the group by value
 	SELECT
-		COUNT(*) as num_customer,
-		DATE_TRUNC('MONTH', start_date) as months
+		TO_CHAR(start_date, 'Month') AS months,
+		COUNT(*) as num_customer		
 	FROM
 		foodie_fi.subscriptions
+	WHERE
+		plan_id = 0
 	GROUP BY
-		months
+		months,
+		EXTRACT(MONTH FROM start_date)
 	ORDER BY
-		months
+		num_customer DESC
 	;
 
 -- 3. What plan start_date values occur after the year 2020 for our dataset? 
@@ -65,13 +68,18 @@ ORDER BY
 	WHERE
 		s.start_date >= '2021-01-01'
 	GROUP BY
-		p.plan_name
+		p.plan_name,
+		p.plan_id
+	ORDER BY
+		p.plan_id
 	;
 -- 4. What is the customer count and percentage of customers who have churned rounded to 1 decimal place?
 	
 	SELECT
 		COUNT(customer_id) as num_churned,
-		ROUND(COUNT(customer_id)*100/(SELECT COUNT(DISTINCT customer_id) FROM foodie_fi.subscriptions),1) AS Percentage
+		ROUND(COUNT(customer_id)::NUMERIC*100/(SELECT 
+											   COUNT(DISTINCT customer_id) 
+											   FROM foodie_fi.subscriptions),1) AS Percentage
 	FROM
 		foodie_fi.subscriptions
 	WHERE
@@ -154,7 +162,7 @@ WITH next_plan_table AS(
 		num_customers
 	ORDER BY
 		plan_id
-
+		;
 -- 8. How many customers have upgraded to an annual plan in 2020?
 	
 	SELECT
