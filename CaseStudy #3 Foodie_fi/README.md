@@ -46,7 +46,7 @@ When customers churn — they will keep their access until the end of their curr
 ***
 
 ## Case Study Questions
-[Solution](https://github.com/HadyanAzr/8WeekSQLChallenge/blob/main/CaseStudy%20%233%20Foodie_fi/foodie_fi_solutions.md
+[Solution](https://github.com/HadyanAzr/8WeekSQLChallenge/blob/main/CaseStudy%20%233%20Foodie_fi/foodie_fi_solutions.md)
 
 ### A. Customer Journey
   
