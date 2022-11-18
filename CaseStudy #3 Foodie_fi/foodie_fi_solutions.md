@@ -52,7 +52,7 @@ ORDER BY
 - Pelanggan dengan nomor ID 11 dan 15 memutuskan untuk tidak berlangganan pada akhirnya.
 
 
-## 🎞 Solution - B. Data Analysis Questions
+## Solution - B. Data Analysis Questions
 
 ### 1. How many customers has Foodie-Fi ever had?
 
