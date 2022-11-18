@@ -1,4 +1,4 @@
-# 🥑 Case Study #3 - Foodie-Fi
+# Case Study #3 - Foodie-Fi
 
 ## A. Customer Journey
 
