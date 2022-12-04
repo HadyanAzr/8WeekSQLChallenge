@@ -51,7 +51,7 @@ Each record in the dataset is related to a specific aggregated slice of the unde
 
 ### A. Data Cleansing Steps
 
-View my solution [here]().
+View my solution [here](https://github.com/HadyanAzr/8WeekSQLChallenge/blob/main/CaseStudy%20%235%20Data_Mart/A.data_cleaning.md).
 
 In a single query, perform the following operations and generate a new table in the `data_mart` schema named `clean_weekly_sales`:
 - Convert the `week_date` to a `DATE` format
@@ -76,7 +76,7 @@ In a single query, perform the following operations and generate a new table in 
 
 ### B. Data Exploration 
 
-View my solution [here]().
+View my solution [here](https://github.com/HadyanAzr/8WeekSQLChallenge/blob/main/CaseStudy%20%235%20Data_Mart/B.%20Data_exploration.md).
 
 1. What day of the week is used for each week_date value?
 2. What range of week numbers are missing from the dataset?
@@ -92,7 +92,7 @@ View my solution [here]().
 
 ### C. Before & After Analysis 
 
-View my solution [here]().
+View my solution [here](https://github.com/HadyanAzr/8WeekSQLChallenge/blob/main/CaseStudy%20%235%20Data_Mart/c.%20Before%20and%20after%20analysis.md).
 
 This technique is usually used when we inspect an important event and want to inspect the impact before and after a certain point in time.
 
