@@ -143,7 +143,7 @@ WITH cte_table AS(
 
 ***
 
-**5. Comparing the closing balance of a customer’s first month and the closing balance from their second nth, what percentage of customers:**
+**5. What is the percentage of customers who increase their closing balance by more than 5%?**
 
 ````sql
 CREATE TEMP TABLE balance AS(
