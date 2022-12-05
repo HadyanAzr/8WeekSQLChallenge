@@ -1,21 +1,21 @@
-# 💵 Case Study #4 - Data Bank
+#  Case Study #4 - Data Bank
 
-## 🏦 Solution - B. Customer Transactions
+##  Solution - B. Customer Transactions
 
 **1. What is the unique count and total amount for each transaction type?**
 
 ````sql
 SELECT
-		txn_type,
-		COUNT(DISTINCT customer_id) AS unique_count,
-		SUM(txn_amount) AS Total_transactions
-	FROM
-		data_bank.customer_transactions
-	GROUP BY
-		txn_type
-	ORDER BY
-		Total_transactions
-	;
+	txn_type,
+	COUNT(DISTINCT customer_id) AS unique_count,
+	SUM(txn_amount) AS Total_transactions
+FROM
+	data_bank.customer_transactions
+GROUP BY
+	txn_type
+ORDER BY
+	Total_transactions
+;
 ````
 
 **Answer:**
@@ -33,13 +33,13 @@ SELECT
 
 ````sql
 SELECT
-			COUNT(customer_id)/(SELECT COUNT (DISTINCT customer_id)
-							   FROM data_bank.customer_transactions) AS avg_deposit_counts,
-			ROUND(AVG(txn_amount),0) AS avg_deposit
-		FROM 
-			data_bank.customer_transactions
-		WHERE
-			txn_type = 'deposit'
+	COUNT(customer_id)/(SELECT COUNT (DISTINCT customer_id)
+			 FROM data_bank.customer_transactions) AS avg_deposit_counts,
+	ROUND(AVG(txn_amount),0) AS avg_deposit
+FROM 
+	data_bank.customer_transactions
+WHERE
+	txn_type = 'deposit'
 		;
 ````
 **Answer:**
@@ -146,7 +146,8 @@ WITH cte_table AS(
 **5. Comparing the closing balance of a customer’s first month and the closing balance from their second nth, what percentage of customers:**
 
 ````sql
-CREATE TEMP TABLE balance AS(WITH cte_table AS(
+CREATE TEMP TABLE balance AS(
+WITH cte_table AS(
 	SELECT
 		customer_id,
 		EXTRACT(MONTH FROM txn_date) AS months,
